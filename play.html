@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Custom Wordle</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page-container">
+        <section class="card">
+            <h1>Play a Friend's Wordle</h1>
+
+            <form id="play-form">
+                <label for="game-link">Paste Game Link</label>
+                <input type="text" id="game-link" required>
+
+                <button type="submit" class="main-button">Play</button>
+            </form>
+
+            <div id="play-message" class="message"></div>
+
+            <div class="top-link">
+                <a href="index.html">Back to Home</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const playForm = document.getElementById("play-form");
+        const gameLinkInput = document.getElementById("game-link");
+        const playMessage = document.getElementById("play-message");
+
+        playForm.addEventListener("submit", function (event) {
+            event.preventDefault();
+
+            const link = gameLinkInput.value.trim();
+
+            if (!link) {
+                playMessage.textContent = "Please paste a valid game link.";
+                return;
+            }
+
+            window.location.href = link;
+        });
+    </script>
+</body>
+</html>

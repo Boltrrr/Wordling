@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play Game</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <main class="page-container">
+        <section class="card game-card">
+            <h1>Custom Wordle</h1>
+
+            <div id="game-message" class="message"></div>
+            <div id="board" class="board"></div>
+
+            <div class="top-link">
+                <a href="index.html">Back to Home</a>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const boardElement = document.getElementById("board");
+        const gameMessage = document.getElementById("game-message");
+
+        const gameState = {
+            secretWord: "",
+            wordLength: 5,
+            maxGuesses: 6,
+            currentRow: 0,
+            currentCol: 0,
+            guesses: [],
+            gameOver: false,
+            board: []
+        };
+
+        function decodeGameData(encoded) {
+            try {
+                return JSON.parse(atob(encoded));
+            }
+            catch (error) {
+                return null;
+            }
+        }
+
+        function getGameDataFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const encodedData = params.get("data");
+
+            if (!encodedData) {
+                return null;
+            }
+
+            return decodeGameData(encodedData);
+        }
+
+        function createBoard() {
+            boardElement.innerHTML = "";
+            gameState.board = [];
+
+            for (let row = 0; row < gameState.maxGuesses; row++) {
+                const rowArray = [];
+                const rowElement = document.createElement("div");
+                rowElement.className = "board-row";
+
+                for (let col = 0; col < gameState.wordLength; col++) {
+                    const cell = document.createElement("div");
+                    cell.className = "cell";
+                    rowElement.appendChild(cell);
+                    rowArray.push(cell);
+                }
+
+                boardElement.appendChild(rowElement);
+                gameState.board.push(rowArray);
+            }
+        }
+
+        function updateBoardDisplay() {
+            for (let row = 0; row < gameState.maxGuesses; row++) {
+                const guess = gameState.guesses[row] || "";
+
+                for (let col = 0; col < gameState.wordLength; col++) {
+                    const cell = gameState.board[row][col];
+                    cell.textContent = guess[col] || "";
+
+                    if (row === gameState.currentRow && col === gameState.currentCol && !gameState.gameOver) {
+                        cell.classList.add("active-cell");
+                    }
+                    else {
+                        cell.classList.remove("active-cell");
+                    }
+                }
+            }
+        }
+
+        function setCurrentGuess(newGuess) {
+            gameState.guesses[gameState.currentRow] = newGuess;
+            gameState.currentCol = newGuess.length;
+            updateBoardDisplay();
+        }
+
+        function handleLetter(letter) {
+            if (gameState.gameOver) {
+                return;
+            }
+
+            const currentGuess = gameState.guesses[gameState.currentRow] || "";
+
+            if (currentGuess.length >= gameState.wordLength) {
+                return;
+            }
+
+            setCurrentGuess(currentGuess + letter);
+        }
+
+        function handleBackspace() {
+            if (gameState.gameOver) {
+                return;
+            }
+
+            const currentGuess = gameState.guesses[gameState.currentRow] || "";
+
+            if (currentGuess.length === 0) {
+                return;
+            }
+
+            setCurrentGuess(currentGuess.slice(0, -1));
+        }
+
+        function colorGuessRow(guess, rowIndex) {
+            const secretLetters = gameState.secretWord.split("");
+            const guessLetters = guess.split("");
+            const result = new Array(gameState.wordLength).fill("absent");
+
+            for (let i = 0; i < gameState.wordLength; i++) {
+                if (guessLetters[i] === secretLetters[i]) {
+                    result[i] = "correct";
+                    secretLetters[i] = null;
+                    guessLetters[i] = null;
+                }
+            }
+
+            for (let i = 0; i < gameState.wordLength; i++) {
+                if (guessLetters[i] && secretLetters.includes(guessLetters[i])) {
+                    result[i] = "present";
+                    secretLetters[secretLetters.indexOf(guessLetters[i])] = null;
+                }
+            }
+
+            for (let i = 0; i < gameState.wordLength; i++) {
+                const cell = gameState.board[rowIndex][i];
+                cell.classList.add(result[i]);
+            }
+        }
+
+        function handleEnter() {
+            if (gameState.gameOver) {
+                return;
+            }
+
+            const guess = gameState.guesses[gameState.currentRow] || "";
+
+            if (guess.length !== gameState.wordLength) {
+                gameMessage.textContent = "Not enough letters.";
+                return;
+            }
+
+            colorGuessRow(guess, gameState.currentRow);
+
+            if (guess === gameState.secretWord) {
+                gameMessage.textContent = "Congratulations! You guessed the word.";
+                gameState.gameOver = true;
+                updateBoardDisplay();
+                return;
+            }
+
+            if (gameState.currentRow === gameState.maxGuesses - 1) {
+                gameMessage.textContent = `Out of guesses. The word was ${gameState.secretWord}.`;
+                gameState.gameOver = true;
+                updateBoardDisplay();
+                return;
+            }
+
+            gameState.currentRow++;
+            gameState.currentCol = 0;
+            gameMessage.textContent = "";
+            updateBoardDisplay();
+        }
+
+        function handleKeydown(event) {
+            if (gameState.gameOver) {
+                return;
+            }
+
+            const key = event.key.toUpperCase();
+
+            if (/^[A-Z]$/.test(key)) {
+                handleLetter(key);
+            }
+            else if (event.key === "Backspace") {
+                handleBackspace();
+            }
+            else if (event.key === "Enter") {
+                handleEnter();
+            }
+        }
+
+        function initializeGame() {
+            const gameData = getGameDataFromUrl();
+
+            if (!gameData || !gameData.word || !gameData.length || !gameData.guesses) {
+                gameMessage.textContent = "Invalid game link.";
+                return;
+            }
+
+            gameState.secretWord = gameData.word.toUpperCase();
+            gameState.wordLength = parseInt(gameData.length);
+            gameState.maxGuesses = parseInt(gameData.guesses);
+            gameState.guesses = new Array(gameState.maxGuesses).fill("");
+
+            createBoard();
+            updateBoardDisplay();
+
+            document.addEventListener("keydown", handleKeydown);
+        }
+
+        initializeGame();
+    </script>
+</body>
+</html>

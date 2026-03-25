@@ -161,3 +161,17 @@ input[type="text"] {
     background-color: #3a3a3c;
     border-color: #3a3a3c;
 }
+
+.qr-container {
+    margin-top: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+.mobile-input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+    width: 1px;
+    height: 1px;
+}

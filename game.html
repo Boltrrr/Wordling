@@ -209,6 +209,10 @@
           return;
         }
 
+        if (event.target === mobileInput) {
+          return;
+        }
+
         const key = event.key.toUpperCase();
 
         if (/^[A-Z]$/.test(key)) {
@@ -245,12 +249,9 @@
 
           const value = mobileInput.value.toUpperCase().replace(/[^A-Z]/g, "");
 
-          if (value.length === 0) {
-            return;
-          }
-
-          for (let i = 0; i < value.length; i++) {
-            handleLetter(value[i]);
+          if (value.length > 0) {
+            const letter = value[value.length - 1];
+            handleLetter(letter);
           }
 
           mobileInput.value = "";
